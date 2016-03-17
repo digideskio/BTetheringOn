@@ -6,9 +6,9 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.TextView;
 
 import java.lang.reflect.InvocationTargetException;
@@ -21,6 +21,16 @@ public class ScrollingActivity extends AppCompatActivity {
     private BluetoothProfile mProxy = null;
 
     private TextView textView;
+    private BluetoothProfile.ServiceListener mProfileServiceListener =
+            new BluetoothProfile.ServiceListener() {
+                public void onServiceConnected(int profile, BluetoothProfile proxy) {
+                    mProxy = proxy;
+                }
+
+                public void onServiceDisconnected(int profile) {
+                    mProxy = null;
+                }
+            };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,9 +47,9 @@ public class ScrollingActivity extends AppCompatActivity {
             }
         });
 
-        textView = (TextView)findViewById(R.id.text);
+        textView = (TextView) findViewById(R.id.text);
 
-        if(isTetheringOn()) {
+        if (isTetheringOn()) {
             textView.setText("Bluetooth Tethering is ON");
         } else {
             textView.setText("Bluetooth Tethering is OFF");
@@ -73,24 +83,13 @@ public class ScrollingActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-
-    private BluetoothProfile.ServiceListener mProfileServiceListener =
-            new BluetoothProfile.ServiceListener() {
-                public void onServiceConnected(int profile, BluetoothProfile proxy) {
-                        mProxy = proxy;
-                }
-                public void onServiceDisconnected(int profile) {
-                    mProxy = null;
-                }
-            };
-
-    private void  setBluetoothTethering(boolean value ) {
+    private void setBluetoothTethering(boolean value) {
         try {
             Class<?> clazz = Class.forName("android.bluetooth.BluetoothPan");
             Method method = clazz.getMethod("setBluetoothTethering", new Class[]{boolean.class});
             method.invoke(mProxy, new Object[]{new Boolean(value)});
 
-            if(value) {
+            if (value) {
                 textView.setText("Bluetooth Tethering is ON");
             } else {
                 textView.setText("Bluetooth Tethering is OFF");
@@ -111,7 +110,11 @@ public class ScrollingActivity extends AppCompatActivity {
         try {
             Class<?> clazz = Class.forName("android.bluetooth.BluetoothPan");
             Method method = clazz.getMethod("isTetheringOn");
-        ret = (boolean)method.invoke(mProxy);
+
+            Object obj = method.invoke(mProxy);
+            if (obj != null) {
+                ret = (boolean) obj;
+            }
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (NoSuchMethodException e) {
@@ -119,6 +122,8 @@ public class ScrollingActivity extends AppCompatActivity {
         } catch (InvocationTargetException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (NullPointerException e) {
             e.printStackTrace();
         }
 
